@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+// 1. Đổi import BrowserRouter thành HashRouter
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom"; 
 import { AuthProvider, useAuth } from "@/lib/auth";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
@@ -54,12 +55,18 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
+      
       <Sonner />
-      <BrowserRouter>
+      {/* 2. SỬA TẠI ĐÂY: 
+        - Thay BrowserRouter bằng HashRouter.
+        - Bỏ basename (HashRouter tự động xử lý dựa trên URL hiện tại).
+      */}
+      <HashRouter>
         <AuthProvider>
           <AppRoutes />
         </AuthProvider>
-      </BrowserRouter>
+      </HashRouter>
+      
     </TooltipProvider>
   </QueryClientProvider>
 );

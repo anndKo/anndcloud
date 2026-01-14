@@ -5,6 +5,9 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // QUAN TRỌNG: Dòng này giúp GitHub Pages nhận diện đúng đường dẫn file
+  base: "/anndcloud/", 
+
   server: {
     host: "::",
     port: 8080,
