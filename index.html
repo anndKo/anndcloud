@@ -2,24 +2,32 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta 
+      name="viewport" 
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" 
+    />
 
     <title>Annd Cloud</title>
-    <meta name="description" content="Lưu trữ dữ liệu cá nhân" />
+    <meta name="description" content="Lưu trữ dữ liệu cá nhân an toàn và tiện lợi" />
 
     <link rel="icon" href="/anndcloud/logo.png" />
-
     <link rel="manifest" href="/anndcloud/manifest.json" />
     <meta name="theme-color" content="#0f172a" />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Annd Cloud" />
-    <meta property="og:description" content="Lưu trữ dữ liệu cá nhân" />
+    <meta property="og:description" content="Lưu trữ dữ liệu cá nhân an toàn và tiện lợi" />
+    <meta property="og:url" content="https://anndko.github.io/anndcloud/" />
+    <meta property="og:site_name" content="Annd Cloud" />
     <meta property="og:image" content="https://anndko.github.io/anndcloud/thumbnail.png" />
+    <meta property="og:image:secure_url" content="https://anndko.github.io/anndcloud/thumbnail.png" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
 
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Annd Cloud" />
+    <meta name="twitter:description" content="Lưu trữ dữ liệu cá nhân an toàn và tiện lợi" />
     <meta name="twitter:image" content="https://anndko.github.io/anndcloud/thumbnail.png" />
     <script type="module" crossorigin src="/anndcloud/assets/index-7gFsBoD5.js"></script>
     <link rel="stylesheet" crossorigin href="/anndcloud/assets/index-C8hy_BCf.css">
@@ -27,5 +35,13 @@
 
   <body>
     <div id="root"></div>
+
+
+
+    <script>
+      document.addEventListener('gesturestart', function (e) {
+        e.preventDefault();
+      });
+    </script>
   </body>
 </html>
