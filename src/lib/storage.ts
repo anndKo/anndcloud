@@ -127,8 +127,8 @@ export async function saveFileMetadata(
   }
 
   const { data, error } = await supabase
-    .from('user_files')
-    .insert(insertData)
+    .from('user_files' as any)
+    .insert(insertData as any)
     .select()
     .single();
 
@@ -137,7 +137,7 @@ export async function saveFileMetadata(
 
 export async function saveLink(userId: string, name: string, url: string) {
   const { data, error } = await supabase
-    .from('user_links')
+    .from('user_links' as any)
     .insert({
       user_id: userId,
       name,
@@ -151,7 +151,7 @@ export async function saveLink(userId: string, name: string, url: string) {
 
 export async function getUserFiles(userId: string) {
   const { data, error } = await supabase
-    .from('user_files')
+    .from('user_files' as any)
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
@@ -161,7 +161,7 @@ export async function getUserFiles(userId: string) {
 
 export async function getUserLinks(userId: string) {
   const { data, error } = await supabase
-    .from('user_links')
+    .from('user_links' as any)
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
@@ -171,7 +171,7 @@ export async function getUserLinks(userId: string) {
 
 export async function renameFile(id: string, newName: string) {
   const { data, error } = await supabase
-    .from('user_files')
+    .from('user_files' as any)
     .update({ name: newName })
     .eq('id', id)
     .select()
@@ -182,7 +182,7 @@ export async function renameFile(id: string, newName: string) {
 
 export async function renameLink(id: string, newName: string) {
   const { data, error } = await supabase
-    .from('user_links')
+    .from('user_links' as any)
     .update({ name: newName })
     .eq('id', id)
     .select()
@@ -194,14 +194,14 @@ export async function renameLink(id: string, newName: string) {
 export async function deleteFile(id: string, filePath: string) {
   // Delete from storage
   const { error: storageError } = await supabase.storage
-    .from('user_files')
+    .from('user_files' as any)
     .remove([filePath]);
 
   if (storageError) return { error: storageError };
 
   // Delete metadata
   const { error } = await supabase
-    .from('user_files')
+    .from('user_files' as any)
     .delete()
     .eq('id', id);
 
@@ -210,7 +210,7 @@ export async function deleteFile(id: string, filePath: string) {
 
 export async function deleteLink(id: string) {
   const { error } = await supabase
-    .from('user_links')
+    .from('user_links' as any)
     .delete()
     .eq('id', id);
 

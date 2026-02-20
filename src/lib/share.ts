@@ -23,7 +23,7 @@ export async function createShareCode(
     // Private mode: revoke any existing share code for this item (disable sharing)
     if (isPrivate) {
       const { error: revokeError } = await supabase
-        .from('share_codes')
+        .from('share_codes' as any)
         .delete()
         .eq('item_id', itemId)
         .eq('item_type', itemType);
@@ -34,7 +34,7 @@ export async function createShareCode(
 
     // Delete existing share code for this item if any
     await supabase
-      .from('share_codes')
+      .from('share_codes' as any)
       .delete()
       .eq('item_id', itemId)
       .eq('item_type', itemType);
@@ -49,7 +49,7 @@ export async function createShareCode(
     }
     
     const { error } = await supabase
-      .from('share_codes')
+      .from('share_codes' as any)
       .insert({
         code,
         user_id: userId,
@@ -110,14 +110,14 @@ export async function getSharedItemSecure(code: string): Promise<{
   error: Error | null;
 }> {
   try {
-    const { data, error } = await supabase.rpc('get_shared_item_secure', {
+    const { data, error } = await supabase.rpc('get_shared_item_secure' as any, {
       share_code_input: code.toUpperCase()
     });
 
     if (error) throw error;
 
     // Parse the response
-    const result = data as {
+    const result = data as any as {
       success: boolean;
       error?: string;
       item?: any;
@@ -177,11 +177,11 @@ export async function getShareCodeForItem(
   itemType: 'file' | 'link'
 ): Promise<string | null> {
   const { data } = await supabase
-    .from('share_codes')
+    .from('share_codes' as any)
     .select('code')
     .eq('item_id', itemId)
     .eq('item_type', itemType)
     .maybeSingle();
 
-  return data?.code || null;
+  return (data as any)?.code || null;
 }

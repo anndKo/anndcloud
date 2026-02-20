@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Cloud, Camera, Image, File, Link as LinkIcon, LogOut, RefreshCw, Loader2, Search, X, MoreVertical, CheckSquare, Trash2, Share2, Download, Play, Eye, Type, Menu } from 'lucide-react';
@@ -17,6 +17,8 @@ import { FileCard } from '@/components/storage/FileCard';
 import { VirtualizedMediaGrid } from '@/components/storage/VirtualizedMediaGrid';
 import { CameraCapture } from '@/components/storage/CameraCapture';
 import { TextEditor, TextList } from '@/components/storage/TextEditor';
+import { StoragePasswordSetup, StoragePasswordGate } from '@/components/storage/StoragePasswordLock';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 type Tab = 'media' | 'files' | 'links' | 'texts';
 interface FileItem {
@@ -37,6 +39,11 @@ interface LinkItem {
   created_at: string;
 }
 export default function StoragePage() {
+  // Password protection state
+  const [passwordEnabled, setPasswordEnabled] = useState<boolean | null>(null);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [verifiedPin, setVerifiedPin] = useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useState<Tab>('media');
   const [files, setFiles] = useState<FileItem[]>([]);
   const [links, setLinks] = useState<LinkItem[]>([]);
@@ -87,9 +94,35 @@ export default function StoragePage() {
     if (!user) return;
     setLoading(true);
     try {
-      const [filesResult, linksResult] = await Promise.all([getUserFiles(user.id), getUserLinks(user.id)]);
-      if (filesResult.data) setFiles(filesResult.data);
-      if (linksResult.data) setLinks(linksResult.data);
+      if (passwordEnabled && verifiedPin) {
+        // Use edge function (server-side PIN verification, bypasses RLS)
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        
+        const response = await fetch(`${supabaseUrl}/functions/v1/secure-storage-data`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ pin: verifiedPin, action: 'all' }),
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.files) setFiles(data.files);
+          if (data.links) setLinks(data.links);
+        } else {
+          throw new Error('Failed to fetch secure data');
+        }
+      } else {
+        // No PIN protection - direct query
+        const [filesResult, linksResult] = await Promise.all([getUserFiles(user.id), getUserLinks(user.id)]);
+        if (filesResult.data) setFiles(filesResult.data as any);
+        if (linksResult.data) setLinks(linksResult.data as any);
+      }
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -100,7 +133,38 @@ export default function StoragePage() {
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user, toast, passwordEnabled, verifiedPin]);
+  // Check password protection status
+  useEffect(() => {
+    if (!user) return;
+    const checkPassword = async () => {
+      const { data } = await supabase
+        .from('storage_passwords')
+        .select('is_enabled')
+        .eq('user_id', user.id)
+        .single() as any;
+      const enabled = !!data?.is_enabled;
+      setPasswordEnabled(enabled);
+      if (!enabled) setIsUnlocked(true);
+    };
+    checkPassword();
+  }, [user]);
+
+  // Lock when tab becomes hidden or page reloads
+  useEffect(() => {
+    if (!passwordEnabled) return;
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setIsUnlocked(false);
+        setVerifiedPin(null);
+        setFiles([]);
+        setLinks([]);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [passwordEnabled]);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -390,6 +454,20 @@ export default function StoragePage() {
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Show password gate if enabled and not unlocked
+  if (passwordEnabled && !isUnlocked && user) {
+    return <StoragePasswordGate userId={user.id} onUnlock={(pin: string) => { setVerifiedPin(pin); setIsUnlocked(true); }} />;
+  }
+
+  // Still checking password status
+  if (passwordEnabled === null) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
+
   return <div className="min-h-screen gradient-bg">
       {/* Header */}
       <motion.header initial={{
@@ -443,6 +521,9 @@ export default function StoragePage() {
                           <CheckSquare className="w-5 h-5 mr-3" />
                           Chọn nhiều
                         </Button>
+                        <div className="px-2 py-1">
+                          {user && <StoragePasswordSetup userId={user.id} />}
+                        </div>
                         <DropdownMenuSeparator />
                         <Button variant="ghost" className="justify-start text-destructive hover:text-destructive" onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}>
                           <LogOut className="w-5 h-5 mr-3" />
@@ -477,6 +558,10 @@ export default function StoragePage() {
                         <CheckSquare className="w-4 h-4 mr-2" />
                         Chọn nhiều
                       </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <div className="px-2 py-1.5">
+                        {user && <StoragePasswordSetup userId={user.id} />}
+                      </div>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
                         <LogOut className="w-4 h-4 mr-2" />
@@ -687,6 +772,7 @@ export default function StoragePage() {
           }}>
                   <TextList 
                     key={textsRefreshKey}
+                    verifiedPin={verifiedPin}
                     onCreateNew={() => {
                       setEditingDocument(null);
                       setShowTextEditor(true);
